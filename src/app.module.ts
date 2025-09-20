@@ -1,21 +1,33 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
+import { MenuModule } from './modules/menu/menu.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { DishesModule } from './modules/dishes/dishes.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
     }),
-    MongooseModule.forRoot(
-      process.env.MONGODB_URI ||
-        'mongodb://localhost:27017/restaurant-management',
-    ),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGODB_URI'),
+      }),
+      inject: [ConfigService],
+    }),
     AuthModule,
+    UsersModule,
+    MenuModule,
+    OrdersModule,
+    DishesModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
