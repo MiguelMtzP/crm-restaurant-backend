@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { envConfiguration, envValidationSchema } from './config/env.config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,6 +15,9 @@ import { SettingsModule } from './modules/settings/settings.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      load: [envConfiguration],
+      validationSchema: envValidationSchema,
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
