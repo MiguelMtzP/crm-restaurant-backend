@@ -158,6 +158,7 @@ export class OrdersService {
     order.cardTxNumber = processPaymentDto.cardTxNumber || 0;
     order.cashReceived = processPaymentDto.cashReceived || 0;
     order.status = OrderStatus.CLOSED;
+    order.tip = processPaymentDto.tip || 0;
     return order.save();
   }
 

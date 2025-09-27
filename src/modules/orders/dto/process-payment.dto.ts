@@ -11,6 +11,10 @@ export class ProcessPaymentDto {
 
   @IsOptional()
   @IsNumber()
+  tip?: number;
+
+  @IsOptional()
+  @IsNumber()
   @Min(0)
   cashReceived?: number;
 }

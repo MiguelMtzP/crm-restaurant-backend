@@ -28,6 +28,9 @@ export class Order {
   @Prop({ type: Number, default: 0 })
   account: number;
 
+  @Prop({ type: Number, default: 0 })
+  tip: number;
+
   @Prop({ enum: PaymentType })
   paymentType: PaymentType;
 
