@@ -10,8 +10,17 @@ async function bootstrap() {
   // Global prefix for all routes
   app.setGlobalPrefix('api');
 
-  // Enable CORS
-  app.enableCors();
+  // Enable CORS with specific configuration
+  app.enableCors({
+    origin: [
+      'https://main.d2fre430gwv3kn.amplifyapp.com',
+      // Durante desarrollo, también permitimos localhost
+      'http://localhost:3000',
+      'http://localhost:4200',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+  });
 
   // Validation and transformation pipe
   app.useGlobalPipes(

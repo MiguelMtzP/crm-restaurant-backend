@@ -5,6 +5,20 @@ import { PaymentType } from '../enums/payment-type.enum';
 
 export type OrderDocument = Order & Document;
 
+@Schema({ _id: true })
+export class CustomCharge {
+  @Prop({ required: true, type: String })
+  name: string;
+
+  @Prop({ required: true, type: Number })
+  amount: number;
+
+  @Prop({ required: false, type: String })
+  description?: string;
+}
+
+export const CustomChargeSchema = SchemaFactory.createForClass(CustomCharge);
+
 @Schema({
   timestamps: true,
   versionKey: false,
@@ -42,6 +56,9 @@ export class Order {
 
   @Prop({ type: Number })
   cashReturned: number;
+
+  @Prop({ type: [CustomChargeSchema], default: [] })
+  customCharges: CustomCharge[];
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;

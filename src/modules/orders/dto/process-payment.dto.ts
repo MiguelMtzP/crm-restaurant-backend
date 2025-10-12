@@ -1,5 +1,14 @@
-import { IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { PaymentType } from '../enums/payment-type.enum';
+import { CustomChargeDto } from './custom-charge.dto';
 
 export class ProcessPaymentDto {
   @IsEnum(PaymentType)
@@ -17,4 +26,10 @@ export class ProcessPaymentDto {
   @IsNumber()
   @Min(0)
   cashReceived?: number;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CustomChargeDto)
+  customCharges?: CustomChargeDto[];
 }

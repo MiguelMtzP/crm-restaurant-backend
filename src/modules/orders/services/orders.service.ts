@@ -14,6 +14,8 @@ import { OrderStatus } from '../enums/order-status.enum';
 import { PaymentType } from '../enums/payment-type.enum';
 import { DishesService } from 'src/modules/dishes/services/dishes.service';
 import { Dish, DishDocument } from 'src/modules/dishes/schemas/dish.schema';
+import { CustomChargeDto } from '../dto/custom-charge.dto';
+import { decode } from 'js-base64';
 
 @Injectable()
 export class OrdersService {
@@ -44,6 +46,26 @@ export class OrdersService {
     return this.orderModel.find().populate('waiterId', '-password').exec();
   }
 
+  async findOneForClient(encodedOrderId: string): Promise<OrderDocument> {
+    const orderId = decode(encodedOrderId);
+    if (!orderId) {
+      throw new NotFoundException(
+        `Order with the encoded ID ${encodedOrderId} not found`,
+      );
+    }
+    const order = await this.orderModel
+      .findById(orderId)
+      .populate('waiterId', '-password')
+      .exec();
+
+    if (!order) {
+      throw new NotFoundException(
+        `Order with the encoded ID ${encodedOrderId} not found`,
+      );
+    }
+    return order;
+  }
+
   async findOne(id: string): Promise<OrderDocument> {
     const order = await this.orderModel
       .findById(id)
@@ -68,6 +90,19 @@ export class OrdersService {
       .find({ status })
       .populate('waiterId', '-password')
       .exec();
+  }
+
+  async updateStatusFromTicket(
+    encodedOrderId: string,
+    updateOrderStatusDto: UpdateOrderStatusDto,
+  ): Promise<Order> {
+    const orderId = decode(encodedOrderId);
+    if (!orderId) {
+      throw new NotFoundException(
+        `Order with the encoded ID ${encodedOrderId} not found`,
+      );
+    }
+    return this.updateStatus(orderId, updateOrderStatusDto);
   }
 
   async updateStatus(
@@ -100,6 +135,7 @@ export class OrdersService {
     }
 
     order.status = updateOrderStatusDto.status;
+    order.paymentType = updateOrderStatusDto.paymentType || order.paymentType;
     return order.save();
   }
 
@@ -108,8 +144,16 @@ export class OrdersService {
     id: string,
     processPaymentDto: ProcessPaymentDto,
   ): Promise<Order> {
-    await this.dishesService.updateOrderAccount(id);
+    if (processPaymentDto.customCharges) {
+      await this.orderModel.updateOne(
+        { _id: id },
+        {
+          $set: { customCharges: processPaymentDto.customCharges },
+        },
+      );
+    }
 
+    await this.dishesService.updateOrderAccount(id);
     const order = await this.findOne(id);
 
     if (order.status === OrderStatus.CLOSED) {
@@ -120,12 +164,6 @@ export class OrdersService {
     if (order.status !== OrderStatus.PAYING) {
       throw new BadRequestException(
         'Cannot process payment for an order that is not paying',
-      );
-    }
-
-    if (order.account <= 0) {
-      throw new BadRequestException(
-        'Cannot process payment for an empty order',
       );
     }
 
@@ -168,5 +206,66 @@ export class OrdersService {
     order.cancelReason = cancelReason;
     await this.dishModel.deleteMany({ orderId: id });
     return order.save();
+  }
+
+  async addCustomCharge(
+    id: string,
+    customChargeDto: CustomChargeDto,
+  ): Promise<Order> {
+    const order = await this.findOne(id);
+
+    if (order.status === OrderStatus.CLOSED) {
+      throw new BadRequestException('Cannot add charges to a closed order');
+    }
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new BadRequestException('Cannot add charges to a cancelled order');
+    }
+
+    const updatedOrder = await this.orderModel
+      .findByIdAndUpdate(
+        id,
+        { $push: { customCharges: customChargeDto } },
+        { new: true },
+      )
+      .populate('waiterId', '-password')
+      .exec();
+
+    if (!updatedOrder) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    return updatedOrder;
+  }
+
+  async removeCustomCharge(id: string, chargeId: string): Promise<Order> {
+    const order = await this.findOne(id);
+
+    if (order.status === OrderStatus.CLOSED) {
+      throw new BadRequestException(
+        'Cannot remove charges from a closed order',
+      );
+    }
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new BadRequestException(
+        'Cannot remove charges from a cancelled order',
+      );
+    }
+
+    const updatedOrder = await this.orderModel
+      .findByIdAndUpdate(
+        id,
+        { $pull: { customCharges: { _id: chargeId } } },
+        { new: true },
+      )
+      .populate('waiterId', '-password')
+      .exec();
+
+    if (!updatedOrder) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    return updatedOrder;
   }
 }

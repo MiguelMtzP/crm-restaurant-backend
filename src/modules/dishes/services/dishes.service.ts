@@ -16,6 +16,7 @@ import { Order, OrderDocument } from 'src/modules/orders/schemas/order.schema';
 import { Menu, MenuDocument } from 'src/modules/menu/schemas/menu.schema';
 import { DishesIncluded } from '../types/dishes-included.type';
 import { DishType } from '../enums/dish-type.enum';
+import { decode } from 'js-base64';
 
 @Injectable()
 export class DishesService {
@@ -85,6 +86,19 @@ export class DishesService {
       throw new NotFoundException(`Dish with ID ${id} not found`);
     }
     return dish;
+  }
+
+  async findByOrderForClient(orderIdEncoded: string): Promise<Dish[]> {
+    const orderId = decode(orderIdEncoded);
+    if (!orderId) {
+      throw new NotFoundException(`Order with ID ${orderIdEncoded} not found`);
+    }
+    const dishes = await this.dishModel
+      .find({ orderId })
+      .populate('orderId')
+      .populate('chefId', '-password')
+      .exec();
+    return this.populateDishMenuIds(dishes);
   }
 
   async findByOrder(orderId: string): Promise<Dish[]> {
@@ -157,7 +171,7 @@ export class DishesService {
   async remove(id: string, userId: string): Promise<void> {
     const dish = await this.findOne(id);
 
-    if (dish.status !== DishStatus.IN_ROW) {
+    if (dish.status !== DishStatus.IN_ROW && !dish.isAutoDelivered) {
       throw new BadRequestException(
         'Can only delete dishes that are in row status',
       );
@@ -212,14 +226,23 @@ export class DishesService {
       .exec();
 
     const lastIndex = lastDish?.kitchenIndex || 0;
+    let dishCounter = 0;
+    const dishesToAdd = addDishesToOrderDto.dishes.map((dish, idxDish) => {
+      if (!dish.isAutoDelivered) {
+        dishCounter++;
+      }
+      if (dishCounter % 2 === 0 && !dish.isAutoDelivered) {
+        dish.dishMenuIds[0].notes += ', \nIncluye Tortillas!';
+      }
+      return {
+        ...dish,
+        kitchenIndex: lastIndex + idxDish + 1,
+        status: dish.isAutoDelivered
+          ? DishStatus.TO_PICKUP
+          : (dish.status ?? DishStatus.IN_ROW),
+      };
+    });
 
-    const dishesToAdd = addDishesToOrderDto.dishes.map((dish, idxDish) => ({
-      ...dish,
-      kitchenIndex: lastIndex + idxDish + 1,
-      status: dish.isAutoDelivered
-        ? DishStatus.TO_PICKUP
-        : (dish.status ?? DishStatus.IN_ROW),
-    }));
     const dishes = await this.dishModel.insertMany(dishesToAdd);
 
     const compoundsDishes = dishes.filter(
@@ -299,11 +322,20 @@ export class DishesService {
   }
   async updateOrderAccount(orderId: string): Promise<Order> {
     const dishes = await this.dishModel.find({ orderId });
+    const order = await this.orderModel.findById(orderId);
+    const customCharges =
+      order?.customCharges?.reduce(
+        (acc, customCharge) => acc + customCharge.amount,
+        0,
+      ) ?? 0;
+    const account =
+      dishes.reduce((acc, dish) => acc + dish.cost, 0) + customCharges;
     const orderUpdated = await this.orderModel.findByIdAndUpdate(
       orderId,
-      { account: dishes.reduce((acc, dish) => acc + dish.cost, 0) },
+      { account: account },
       { new: true },
     );
+
     if (!orderUpdated) {
       throw new NotFoundException(`Order with ID ${orderId} not found`);
     }

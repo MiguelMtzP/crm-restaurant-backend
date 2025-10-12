@@ -22,6 +22,9 @@ export class Menu {
   @Prop({ type: Boolean, default: false })
   isAutoDelivered: boolean;
 
+  @Prop({ type: Boolean, default: false })
+  isHidden: boolean;
+
   @Prop({ required: true, enum: MenuSource })
   source: MenuSource;
 

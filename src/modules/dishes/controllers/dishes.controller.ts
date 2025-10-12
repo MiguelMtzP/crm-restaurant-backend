@@ -21,6 +21,7 @@ import { DishStatus } from '../enums/dish-status.enum';
 import { UserDocument } from '../../auth/schemas/user.schema';
 import { AddDishesToOrderDto } from '../dto/add-dishes-to-order.dto';
 import { AddChefToDishDto } from '../dto/add-chef-to-dish.dto';
+import { Public } from 'src/modules/auth/decorators/public.decorator';
 
 @Controller('dishes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -42,6 +43,12 @@ export class DishesController {
   @Roles(UserRole.MESERO, UserRole.COCINERO, UserRole.GERENTE)
   findAllByToday() {
     return this.dishesService.findAllByToday();
+  }
+
+  @Get('client/order/:encodedOrderId')
+  @Public()
+  findAllByOrder(@Param('encodedOrderId') encodedOrderId: string) {
+    return this.dishesService.findByOrderForClient(encodedOrderId);
   }
 
   @Get('order/:orderId')

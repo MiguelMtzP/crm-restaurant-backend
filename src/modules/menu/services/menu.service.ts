@@ -15,7 +15,7 @@ export class MenuService {
   }
 
   async findAll(): Promise<Menu[]> {
-    return this.menuModel.find().exec();
+    return this.menuModel.find({ isHidden: { $ne: true } }).exec();
   }
 
   async findOne(id: string): Promise<Menu> {
