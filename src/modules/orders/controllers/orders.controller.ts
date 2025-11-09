@@ -25,6 +25,7 @@ import { ObjectId } from 'mongoose';
 import { CancelOrderDto } from '../dto/cancel-order.dto';
 import { CustomChargeDto } from '../dto/custom-charge.dto';
 import { RemoveCustomChargeDto } from '../dto/remove-custom-charge.dto';
+import { UpdateOrderDto } from '../dto/update-order.dto';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -45,6 +46,12 @@ export class OrdersController {
   @Roles(UserRole.MESERO, UserRole.GERENTE)
   findAll() {
     return this.ordersService.findAll();
+  }
+
+  @Get('available-tables')
+  @Roles(UserRole.MESERO, UserRole.GERENTE)
+  getAvailableTables() {
+    return this.ordersService.getAvailableTables();
   }
 
   @Get('waiter/:waiterId')
@@ -101,10 +108,22 @@ export class OrdersController {
     return this.ordersService.processPayment(id, processPaymentDto);
   }
 
-  @Delete(':id/cancel')
+  @Put(':id/custom-charges')
   @Roles(UserRole.MESERO, UserRole.GERENTE)
-  cancelOrder(@Param('id') id: string, @Body() cancelOrderDto: CancelOrderDto) {
-    return this.ordersService.cancelOrder(id, cancelOrderDto.cancelReason);
+  removeCustomCharge(
+    @Param('id') id: string,
+    @Body() removeCustomChargeDto: RemoveCustomChargeDto,
+  ) {
+    return this.ordersService.removeCustomCharge(
+      id,
+      removeCustomChargeDto.chargeId,
+    );
+  }
+
+  @Put(':id')
+  @Roles(UserRole.MESERO, UserRole.GERENTE)
+  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
+    return this.ordersService.update(id, updateOrderDto);
   }
 
   @Post(':id/custom-charges')
@@ -116,15 +135,9 @@ export class OrdersController {
     return this.ordersService.addCustomCharge(id, customChargeDto);
   }
 
-  @Put(':id/custom-charges')
+  @Delete(':id/cancel')
   @Roles(UserRole.MESERO, UserRole.GERENTE)
-  removeCustomCharge(
-    @Param('id') id: string,
-    @Body() removeCustomChargeDto: RemoveCustomChargeDto,
-  ) {
-    return this.ordersService.removeCustomCharge(
-      id,
-      removeCustomChargeDto.chargeId,
-    );
+  cancelOrder(@Param('id') id: string, @Body() cancelOrderDto: CancelOrderDto) {
+    return this.ordersService.cancelOrder(id, cancelOrderDto.cancelReason);
   }
 }

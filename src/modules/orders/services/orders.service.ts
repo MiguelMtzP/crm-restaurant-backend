@@ -16,6 +16,7 @@ import { DishesService } from 'src/modules/dishes/services/dishes.service';
 import { Dish, DishDocument } from 'src/modules/dishes/schemas/dish.schema';
 import { CustomChargeDto } from '../dto/custom-charge.dto';
 import { decode } from 'js-base64';
+import { UpdateOrderDto } from '../dto/update-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -208,6 +209,13 @@ export class OrdersService {
     return order.save();
   }
 
+  async update(id: string, updateOrderDto: UpdateOrderDto): Promise<Order> {
+    const order = await this.findOne(id);
+    order.table = updateOrderDto.table || order.table;
+    order.people = updateOrderDto.people || order.people;
+    return order.save();
+  }
+
   async addCustomCharge(
     id: string,
     customChargeDto: CustomChargeDto,
@@ -267,5 +275,25 @@ export class OrdersService {
     }
 
     return updatedOrder;
+  }
+
+  async getAvailableTables(): Promise<number[]> {
+    // Obtener todas las órdenes con status OPEN o PAYING
+    const occupiedOrders = await this.orderModel.find({
+      status: { $in: [OrderStatus.OPEN, OrderStatus.PAYING] },
+    });
+
+    // Extraer los números de mesa ocupados
+    const occupiedTables = occupiedOrders.map((order) => order.table);
+
+    // Generar universo de 21 mesas (1-21)
+    const allTables = Array.from({ length: 21 }, (_, i) => i + 1);
+
+    // Filtrar las mesas disponibles
+    const availableTables = allTables.filter(
+      (table) => !occupiedTables.includes(table),
+    );
+
+    return availableTables;
   }
 }
