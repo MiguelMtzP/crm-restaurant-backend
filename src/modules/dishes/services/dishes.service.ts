@@ -366,4 +366,48 @@ export class DishesService {
       }),
     );
   }
+
+  async getMetrics(from: string, to: string): Promise<any[]> {
+    // Convertir strings a objetos Date
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    // Ajustar toDate para incluir todo el día final (hasta las 23:59:59.999)
+    fromDate.setHours(0, 0, 0, 0);
+    toDate.setHours(23, 59, 59, 999);
+    const ordersInPeriod = (
+      await this.orderModel.find(
+        {
+          createdAt: {
+            $gte: fromDate,
+            $lte: toDate,
+          },
+          status: {
+            $ne: 'cancelled',
+          },
+        },
+        { _id: 1 },
+      )
+    ).map((order) => order._id);
+
+    const pipeline: any[] = [
+      { $match: { orderId: { $in: ordersInPeriod } } },
+      {
+        $group: {
+          _id: 'metrics',
+          packages: {
+            $sum: {
+              $cond: [{ $eq: ['$type', 'compound'] }, 1, 0],
+            },
+          },
+          single: {
+            $sum: {
+              $cond: [{ $eq: ['$type', 'single'] }, 1, 0],
+            },
+          },
+        },
+      },
+    ];
+    const [metrics] = await this.dishModel.aggregate(pipeline).exec();
+    return metrics ?? {};
+  }
 }

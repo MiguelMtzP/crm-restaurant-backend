@@ -54,6 +54,12 @@ export class OrdersController {
     return this.ordersService.getAvailableTables();
   }
 
+  @Get('metrics')
+  @Roles(UserRole.GERENTE)
+  getMetrics(@Query('from') from: string, @Query('to') to: string) {
+    return this.ordersService.getMetrics(from, to);
+  }
+
   @Get('waiter/:waiterId')
   @Roles(UserRole.MESERO, UserRole.GERENTE)
   findByWaiter(@Param('waiterId') waiterId: string) {

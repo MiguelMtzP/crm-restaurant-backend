@@ -296,4 +296,69 @@ export class OrdersService {
 
     return availableTables;
   }
+
+  async getMetrics(from: string, to: string): Promise<any[]> {
+    // Convertir strings a objetos Date
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    // Ajustar toDate para incluir todo el día final (hasta las 23:59:59.999)
+    fromDate.setHours(0, 0, 0, 0);
+    toDate.setHours(23, 59, 59, 999);
+
+    const pipeline: any[] = [
+      {
+        $match: {
+          createdAt: {
+            $gte: fromDate,
+            $lte: toDate,
+          },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      {
+        $group: {
+          _id: 'metrics',
+          tables: { $sum: 1 },
+          people: { $sum: '$people' },
+          accounts: { $sum: '$account' },
+          tips: { $sum: '$tip' },
+        },
+      },
+    ];
+    const pipelineAmountOrders: any[] = [
+      {
+        $match: {
+          createdAt: {
+            $gte: fromDate,
+            $lte: toDate,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: 'amountOrders',
+          openOrders: {
+            $sum: { $cond: [{ $eq: ['$status', OrderStatus.OPEN] }, 1, 0] },
+          },
+          closedOrders: {
+            $sum: { $cond: [{ $eq: ['$status', OrderStatus.CLOSED] }, 1, 0] },
+          },
+          cancelledOrders: {
+            $sum: {
+              $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0],
+            },
+          },
+          payingOrders: {
+            $sum: { $cond: [{ $eq: ['$status', OrderStatus.PAYING] }, 1, 0] },
+          },
+        },
+      },
+    ];
+    const [metrics] = await this.orderModel.aggregate(pipeline).exec();
+    const [byStatus] = await this.orderModel
+      .aggregate(pipelineAmountOrders)
+      .exec();
+
+    return { ...(metrics ?? {}), ...(byStatus ?? {}) };
+  }
 }

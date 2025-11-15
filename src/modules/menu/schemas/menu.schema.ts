@@ -28,6 +28,9 @@ export class Menu {
   @Prop({ required: true, enum: MenuSource })
   source: MenuSource;
 
+  @Prop({ type: [String], default: [] })
+  complements: string[];
+
   @Prop({ type: [Object], required: true })
   attributes: MenuAttribute[];
 

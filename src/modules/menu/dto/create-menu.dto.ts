@@ -30,6 +30,11 @@ export class CreateMenuDto {
   source: MenuSource;
 
   @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  complements?: string[];
+
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => MenuAttribute)
   attributes: MenuAttribute[];

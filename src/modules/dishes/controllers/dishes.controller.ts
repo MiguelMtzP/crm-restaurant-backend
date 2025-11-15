@@ -39,6 +39,13 @@ export class DishesController {
   findAll() {
     return this.dishesService.findAll();
   }
+
+  @Get('metrics')
+  @Roles(UserRole.GERENTE)
+  getMetrics(@Query('from') from: string, @Query('to') to: string) {
+    return this.dishesService.getMetrics(from, to);
+  }
+
   @Get('today')
   @Roles(UserRole.MESERO, UserRole.COCINERO, UserRole.GERENTE)
   findAllByToday() {
