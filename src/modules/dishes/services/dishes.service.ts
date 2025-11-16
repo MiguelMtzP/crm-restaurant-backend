@@ -371,9 +371,7 @@ export class DishesService {
     // Convertir strings a objetos Date
     const fromDate = new Date(from);
     const toDate = new Date(to);
-    // Ajustar toDate para incluir todo el día final (hasta las 23:59:59.999)
-    fromDate.setHours(0, 0, 0, 0);
-    toDate.setHours(23, 59, 59, 999);
+
     const ordersInPeriod = (
       await this.orderModel.find(
         {
