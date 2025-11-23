@@ -296,6 +296,23 @@ export class OrdersService {
 
     return availableTables;
   }
+  async computeBalance() {
+    const orders = await this.orderModel.find();
+    for (const order of orders) {
+      const dishes = await this.dishModel.find({ orderId: order._id });
+      const customCharges = order.customCharges.reduce(
+        (acc, customCharge) => acc + customCharge.amount,
+        0,
+      );
+      const balance =
+        dishes.reduce((acc, dish) => acc + dish.cost, 0) + customCharges;
+      if (balance !== order.account) {
+        console.log(
+          `Order ${order._id} ${order.status} - ${order.account} - ${balance}`,
+        );
+      }
+    }
+  }
 
   async getMetrics(from: string, to: string): Promise<any[]> {
     // Convertir strings a objetos Date

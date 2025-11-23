@@ -238,7 +238,9 @@ export class DishesService {
         ...dish,
         kitchenIndex: lastIndex + idxDish + 1,
         status: dish.isAutoDelivered
-          ? DishStatus.TO_PICKUP
+          ? dish.dishMenuIds[0].alreadyDelivered
+            ? DishStatus.DELIVERED
+            : DishStatus.TO_PICKUP
           : (dish.status ?? DishStatus.IN_ROW),
       };
     });
