@@ -26,6 +26,10 @@ export class CreateMenuDto {
   @IsOptional()
   isAutoDelivered?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  isHidden?: boolean;
+
   @IsEnum(MenuSource)
   source: MenuSource;
 

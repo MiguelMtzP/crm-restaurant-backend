@@ -12,6 +12,7 @@ import {
 import { MenuService } from '../services/menu.service';
 import { CreateMenuDto } from '../dto/create-menu.dto';
 import { UpdateMenuDto } from '../dto/update-menu.dto';
+import { FindAllMenuDto } from '../dto/find-all-menu.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -29,8 +30,9 @@ export class MenuController {
   }
 
   @Get()
-  findAll() {
-    return this.menuService.findAll();
+  findAll(@Query() query: FindAllMenuDto) {
+    console.log(query);
+    return this.menuService.findAll(query.excludeHidden);
   }
 
   @Get('category')

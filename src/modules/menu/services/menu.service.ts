@@ -14,8 +14,14 @@ export class MenuService {
     return createdMenu.save();
   }
 
-  async findAll(): Promise<Menu[]> {
-    return this.menuModel.find({ isHidden: { $ne: true } }).exec();
+  async findAll(excludeHidden?: boolean): Promise<Menu[]> {
+    const filter: any = {};
+    if (excludeHidden) {
+      filter.isHidden = { $ne: true };
+    }
+    console.log(filter);
+
+    return this.menuModel.find(filter).exec();
   }
 
   async findOne(id: string): Promise<Menu> {
