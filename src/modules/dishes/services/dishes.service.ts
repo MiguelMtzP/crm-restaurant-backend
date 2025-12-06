@@ -17,6 +17,8 @@ import { Menu, MenuDocument } from 'src/modules/menu/schemas/menu.schema';
 import { DishesIncluded } from '../types/dishes-included.type';
 import { DishType } from '../enums/dish-type.enum';
 import { decode } from 'js-base64';
+import { UserDocument } from 'src/modules/auth/schemas/user.schema';
+import { UserRole } from 'src/modules/auth/enums/user-roles.enum';
 
 @Injectable()
 export class DishesService {
@@ -129,56 +131,59 @@ export class DishesService {
   async updateStatus(
     id: string,
     updateDishStatusDto: UpdateDishStatusDto,
-    userId: string,
+    user: UserDocument,
   ): Promise<Dish> {
     const dish = await this.findOne(id);
     const oldStatus = dish.status;
 
     // Validate status transition
-    if (dish.status === DishStatus.DELIVERED) {
-      throw new BadRequestException('Cannot modify a delivered dish');
+    if (
+      dish.status === DishStatus.DELIVERED &&
+      user.role !== UserRole.GERENTE
+    ) {
+      throw new BadRequestException('Unauthorized to modify a delivered dish');
     }
 
     // Validate conflict reason
     if (
       updateDishStatusDto.status === DishStatus.CONFLICT &&
-      !updateDishStatusDto.conflictReason
+      !updateDishStatusDto.conflictReason &&
+      user.role !== UserRole.GERENTE
     ) {
       throw new BadRequestException(
-        'Conflict reason is required when setting status to conflict',
+        'Unauthorized to set conflict reason without a reason',
       );
     }
 
-    //TODO: if status is working on, assign chef to dish
-
-    // Update dish status
-    dish.status = updateDishStatusDto.status;
-    if (updateDishStatusDto.conflictReason) {
-      dish.conflictReason = updateDishStatusDto.conflictReason;
-    }
-
-    // Create log entry
     await this.createLog(
       id,
       DishLogAction.CHANGE_STATUS,
       `Status changed from ${oldStatus} to ${updateDishStatusDto.status}`,
-      userId,
+      user._id as string,
     );
 
     return dish.save();
   }
 
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: string, user: UserDocument): Promise<void> {
     const dish = await this.findOne(id);
 
-    if (dish.status !== DishStatus.IN_ROW && !dish.isAutoDelivered) {
+    if (
+      dish.status !== DishStatus.IN_ROW &&
+      !dish.isAutoDelivered &&
+      user.role !== UserRole.GERENTE
+    ) {
       throw new BadRequestException(
-        'Can only delete dishes that are in row status',
+        'unauthorized to delete a dish that is not in row status',
       );
     }
 
-    // Create log entry before deletion
-    await this.createLog(id, DishLogAction.DELETE_DISH, 'Dish deleted', userId);
+    await this.createLog(
+      id,
+      DishLogAction.DELETE_DISH,
+      'Dish deleted',
+      user._id as string,
+    );
 
     await this.dishModel.findByIdAndDelete(id).exec();
 

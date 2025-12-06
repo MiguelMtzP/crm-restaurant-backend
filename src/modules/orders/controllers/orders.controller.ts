@@ -44,8 +44,8 @@ export class OrdersController {
 
   @Get()
   @Roles(UserRole.MESERO, UserRole.GERENTE)
-  findAll() {
-    return this.ordersService.findAll();
+  findAll(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.ordersService.findAll(from, to);
   }
 
   @Get('available-tables')

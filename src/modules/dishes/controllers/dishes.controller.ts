@@ -95,17 +95,13 @@ export class DishesController {
     @Body() updateDishStatusDto: UpdateDishStatusDto,
     @CurrentUser() user: UserDocument,
   ) {
-    return this.dishesService.updateStatus(
-      id,
-      updateDishStatusDto,
-      user._id as string,
-    );
+    return this.dishesService.updateStatus(id, updateDishStatusDto, user);
   }
 
   @Delete(':id')
   @Roles(UserRole.MESERO, UserRole.GERENTE)
   remove(@Param('id') id: string, @CurrentUser() user: UserDocument) {
-    return this.dishesService.remove(id, user._id as string);
+    return this.dishesService.remove(id, user);
   }
 
   @Post('dishes-to-order')

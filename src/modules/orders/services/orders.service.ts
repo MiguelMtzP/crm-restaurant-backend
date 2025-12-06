@@ -43,8 +43,31 @@ export class OrdersService {
     return createdOrder.save();
   }
 
-  async findAll(): Promise<Order[]> {
-    return this.orderModel.find().populate('waiterId', '-password').exec();
+  async findAll(from?: string, to?: string): Promise<Order[]> {
+    const filter: any = {};
+
+    // Si se envían los parámetros from y to, filtrar por createdAt
+    if (from && to) {
+      filter.createdAt = {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      };
+    } else if (from) {
+      // Solo desde una fecha
+      filter.createdAt = {
+        $gte: new Date(from),
+      };
+    } else if (to) {
+      // Solo hasta una fecha
+      filter.createdAt = {
+        $lte: new Date(to),
+      };
+    }
+
+    return this.orderModel
+      .find(filter)
+      .populate('waiterId', '-password')
+      .exec();
   }
 
   async findOneForClient(encodedOrderId: string): Promise<OrderDocument> {
