@@ -154,7 +154,13 @@ export class DishesService {
         'Unauthorized to set conflict reason without a reason',
       );
     }
+    // Update dish status
+    dish.status = updateDishStatusDto.status;
+    if (updateDishStatusDto.conflictReason) {
+      dish.conflictReason = updateDishStatusDto.conflictReason;
+    }
 
+    // Create log entry
     await this.createLog(
       id,
       DishLogAction.CHANGE_STATUS,
