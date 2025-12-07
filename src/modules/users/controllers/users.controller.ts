@@ -39,7 +39,7 @@ export class UsersController {
   }
 
   @Get('active/role')
-  @Roles(UserRole.GERENTE)
+  @Roles(UserRole.GERENTE, UserRole.COCINERO)
   findActiveByRole(@Query('role') role: UserRole) {
     return this.usersService.findActiveByRole(role);
   }
