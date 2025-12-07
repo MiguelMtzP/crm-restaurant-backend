@@ -258,8 +258,9 @@ export class OrdersService {
     if (!updatedOrder) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
+    const orderUpdated = await this.dishesService.updateOrderAccount(id);
 
-    return updatedOrder;
+    return orderUpdated;
   }
 
   async removeCustomCharge(id: string, chargeId: string): Promise<Order> {
@@ -290,7 +291,8 @@ export class OrdersService {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
 
-    return updatedOrder;
+    const orderUpdated = await this.dishesService.updateOrderAccount(id);
+    return orderUpdated;
   }
 
   async getAvailableTables(): Promise<number[]> {
