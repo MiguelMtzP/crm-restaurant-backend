@@ -31,7 +31,6 @@ export class MenuController {
 
   @Get()
   findAll(@Query() query: FindAllMenuDto) {
-    console.log(query);
     return this.menuService.findAll(query.excludeHidden);
   }
 

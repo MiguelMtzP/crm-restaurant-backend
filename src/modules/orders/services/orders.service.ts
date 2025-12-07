@@ -17,6 +17,8 @@ import { Dish, DishDocument } from 'src/modules/dishes/schemas/dish.schema';
 import { CustomChargeDto } from '../dto/custom-charge.dto';
 import { decode } from 'js-base64';
 import { UpdateOrderDto } from '../dto/update-order.dto';
+import { UserDocument } from 'src/modules/auth/schemas/user.schema';
+import { UserRole } from 'src/modules/auth/enums/user-roles.enum';
 
 @Injectable()
 export class OrdersService {
@@ -132,15 +134,17 @@ export class OrdersService {
   async updateStatus(
     id: string,
     updateOrderStatusDto: UpdateOrderStatusDto,
+    user?: UserDocument,
   ): Promise<Order> {
     const order = await this.findOne(id);
 
     // Validate status transition
     if (
       order.status === OrderStatus.CLOSED &&
-      updateOrderStatusDto.status !== OrderStatus.CLOSED
+      updateOrderStatusDto.status !== OrderStatus.CLOSED &&
+      user?.role !== UserRole.GERENTE
     ) {
-      throw new BadRequestException('Cannot modify a closed order');
+      throw new BadRequestException('Unauthorized to modify a closed order');
     }
 
     if (

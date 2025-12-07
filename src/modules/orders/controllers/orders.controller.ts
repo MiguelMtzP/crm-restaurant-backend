@@ -89,8 +89,9 @@ export class OrdersController {
   updateStatus(
     @Param('id') id: string,
     @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+    @CurrentUser() user: UserDocument,
   ) {
-    return this.ordersService.updateStatus(id, updateOrderStatusDto);
+    return this.ordersService.updateStatus(id, updateOrderStatusDto, user);
   }
 
   @Put('client/:encodedOrderId/status')

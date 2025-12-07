@@ -19,7 +19,6 @@ export class MenuService {
     if (excludeHidden) {
       filter.isHidden = { $ne: true };
     }
-    console.log(filter);
 
     return this.menuModel.find(filter).exec();
   }
