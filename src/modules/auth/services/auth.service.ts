@@ -25,12 +25,16 @@ export class AuthService {
 
     await user.save();
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...result } = user.toJSON();
     return result;
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.userModel.findOne({ userId: loginDto.userId });
+    const user = await this.userModel.findOne({
+      userId: loginDto.userId,
+      isActive: true,
+    });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
