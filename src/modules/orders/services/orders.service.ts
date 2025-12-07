@@ -184,17 +184,6 @@ export class OrdersService {
     await this.dishesService.updateOrderAccount(id);
     const order = await this.findOne(id);
 
-    if (order.status === OrderStatus.CLOSED) {
-      throw new BadRequestException(
-        'Cannot process payment for a closed order',
-      );
-    }
-    if (order.status !== OrderStatus.PAYING) {
-      throw new BadRequestException(
-        'Cannot process payment for an order that is not paying',
-      );
-    }
-
     // Validate payment type specific requirements
     switch (processPaymentDto.paymentType) {
       case PaymentType.CARD:
